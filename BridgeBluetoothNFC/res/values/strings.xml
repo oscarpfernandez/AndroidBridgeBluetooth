@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Bridge Bluetooth NFC</string>
+    <string name="label_bt_device">External Bluetooth Device:</string>
+    <string name="label_bt_device_value">---Disconnected---</string>
+    <string name="label_bt_tags">Received NFC Tags:</string>
+    <string name="label_bt_tags_value">---No Card Detected---</string>
+    <string name="bt_on">Bluetooth ON</string>
+    <string name="bt_off">Bluetooth OFF</string>
+    <string name="nfc_pooling_on">Pooling ON</string>
+    <string name="nfc_pooling_off">Pooling OFF</string>
+</resources>

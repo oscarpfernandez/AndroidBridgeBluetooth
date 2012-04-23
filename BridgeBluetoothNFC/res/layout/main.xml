@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/hline"
+        android:layout_width="fill_parent"
+        android:layout_height="2dip"
+        android:background="#FF00FF00"
+        android:paddingTop="10sp" />
+
+    <TextView
+        android:id="@+id/label_bt_device"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/hline"
+        android:paddingLeft="10sp"
+        android:text="@string/label_bt_device"
+        android:textSize="25dip" />
+    
+    <TextView
+        android:id="@+id/label_bt_device_value"
+        android:layout_width="wrap_content"
+        android:layout_height="60sp"
+        android:layout_below="@+id/label_bt_device"
+        android:paddingLeft="10sp"
+        android:text="@string/label_bt_device_value"
+        android:textSize="25dip" 
+        android:textColor="#FFFF00"/>
+
+    <TextView
+        android:id="@+id/hline2"
+        android:layout_width="fill_parent"
+        android:layout_height="2dip"
+        android:layout_below="@+id/label_bt_device_value"
+        android:background="#FF00FF00"
+        android:paddingBottom="20sp" />
+    
+    <ToggleButton
+        android:id="@+id/bt_toggle_button" 
+        android:layout_width="210sp"
+        android:layout_height="70sp"
+        android:layout_below="@+id/hline2"
+        android:layout_alignParentLeft="true"
+        android:textOff="@string/bt_off"
+        android:textOn="@string/bt_on"
+        android:textSize="25dip" />
+
+    <ToggleButton
+        android:id="@+id/nfc_pooling_toggle_button"
+        android:layout_width="210sp"
+        android:layout_height="70sp"
+        android:layout_below="@+id/hline2"
+		android:layout_toRightOf="@+id/bt_toggle_button"
+        android:textOff="@string/nfc_pooling_off"
+        android:textOn="@string/nfc_pooling_on"
+        android:textSize="25dip" /> 
+
+    <TextView
+        android:id="@+id/hline3"
+        android:layout_width="fill_parent"
+        android:layout_height="2dip"
+        android:background="#FF00FF00"
+        android:layout_below="@+id/nfc_pooling_toggle_button"
+        android:paddingTop="10sp" />
+    
+    <TextView
+        android:id="@+id/label_bt_tags"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/hline3"
+        android:paddingLeft="25sp"
+        android:textSize="25dip" 
+        android:text="@string/label_bt_tags" />
+
+    <TextView
+        android:id="@+id/label_bt_tags_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/label_bt_tags"
+        android:paddingLeft="10sp"
+        android:text="@string/label_bt_tags_value" 
+	    android:textSize="25dip" 
+        android:textColor="#FFFF00"/>
+
+
+</RelativeLayout>
