@@ -40,7 +40,7 @@ public class NFCBridgeGUI extends Activity{
 	private final Handler mPoolingConnectHandler = new Handler();
 	private final Handler mPoolingDiconnectHandler = new Handler();
 	private final static Handler mReceivedTagsHandler = new Handler();
-
+	
 	// create runnable for posting
 	final Runnable mUpdateBTConnectResults = new Runnable() {
 		public void run() {
@@ -49,6 +49,7 @@ public class NFCBridgeGUI extends Activity{
 	};
 	final Runnable mUpdateBTDisconnectResults = new Runnable() {
 		public void run() {
+			deviceNameTV.setText("---Disconnecting Bluetooth---");
 			disconnectBluetooth();
 			deviceNameTV.setText("---Disconnected---");
 		}
@@ -56,12 +57,13 @@ public class NFCBridgeGUI extends Activity{
 	final Runnable mUpdatePoolingConnectResults = new Runnable() {
 		public void run() {
 			connectPooling();
+			tagValueTV.setText("---Waiting Tags---");
 		}
 	};
 	final Runnable mUpdatePoolingDisconnectResults = new Runnable() {
 		public void run() {
 			disconnectPooling();
-			tagValueTV.setText("---No Card Detected---");
+			tagValueTV.setText("---Pooling Disabled---");
 		}
 	};
 	final static Runnable mUpdateReceivedTagsResults = new Runnable() {
@@ -69,7 +71,7 @@ public class NFCBridgeGUI extends Activity{
 			updateReceivedTags();
 		}
 	};
-
+	
 
 	/**************************************************************************
 	 * This Broadcast Receiver will keep listening of Intents sent by the Pooling
@@ -97,7 +99,7 @@ public class NFCBridgeGUI extends Activity{
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
-
+		
 		/**********************************************************************
 		 * Registration of the Broadcast Receiver to listen for notifications 
 		 * from the NFCPoolingHandler listening for NFC tags. 
@@ -139,11 +141,11 @@ public class NFCBridgeGUI extends Activity{
 			public void onClick(View v) {
 
 				if(!isPoolingEnabled){
-					mPoolingConnectHandler.post(mUpdatePoolingConnectResults);
+					mPoolingConnectHandler.postAtFrontOfQueue(mUpdatePoolingConnectResults);
 
 				}
 				else{
-					mPoolingDiconnectHandler.post(mUpdatePoolingDisconnectResults);
+					mPoolingDiconnectHandler.postAtFrontOfQueue(mUpdatePoolingDisconnectResults);
 				}
 
 				if(!mEnablePoolingtButton.isChecked()){
@@ -193,7 +195,7 @@ public class NFCBridgeGUI extends Activity{
 
 	private void connectPooling(){
 		try {
-			BluetoothNFCBrigdgeImpl.getInstance().startNFCPooling(2000, this);
+			BluetoothNFCBrigdgeImpl.getInstance().startNFCPooling(1500, this);
 		} catch (IOException e) {
 			Log.d(IConstants.MY_TAG, "*** Pooling could not be started due to connection error: "+e);
 		} catch (InterruptedException e) {
@@ -237,6 +239,16 @@ public class NFCBridgeGUI extends Activity{
 	@Override
 	protected void onRestart() {
 		super.onRestart();
+		if(!isBluetoothEnabled && mEnableBTtButton.isChecked()){
+			connectBluetooth();
+		}
+		if(isPoolingEnabled && mEnablePoolingtButton.isChecked()){
+			connectPooling();
+		}
+		IntentFilter intentToReceiveFilter = new IntentFilter();
+		intentToReceiveFilter.addAction(IConstants.INTENT_TRANSFER_NFC_TAGS);
+		this.registerReceiver(mIntentNFCTagsReceiver, intentToReceiveFilter, null, mNFCTAGHandler);
+		
 	}
 
 	@Override
@@ -247,6 +259,14 @@ public class NFCBridgeGUI extends Activity{
 	@Override
 	protected void onStop() {
 		super.onStop();
+		this.unregisterReceiver(mIntentNFCTagsReceiver);
+		isBluetoothEnabled = false;
+		mEnableBTtButton.setChecked(false);
+		mEnableBTtButton.setEnabled(true);
+		mPoolingDiconnectHandler.post(mUpdatePoolingDisconnectResults);
+		mEnablePoolingtButton.setChecked(false);
+		mEnablePoolingtButton.setEnabled(false);
+		mBTDiconnectHandler.post(mUpdateBTDisconnectResults);
 	}
 
 }

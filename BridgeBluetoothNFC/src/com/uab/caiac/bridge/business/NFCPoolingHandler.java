@@ -27,6 +27,24 @@ public final class NFCPoolingHandler {
 	//Flag to warn the thread manager to finish
 	private boolean mFinishThread = false;
 
+	//debug flag
+	private boolean D = IConstants.DEBUG_ENABLED;
+	
+	/*
+	 * Establishes the pauses that are required between a RX and TX command.
+	 * In other words, enforces the required pause times between a call and 
+	 * its response. This is mandatory in order to get the call system 
+	 * synchronized and functioning properly.
+	 * 
+	 * DO NOT change these parameters if you don't know what you're doing! 
+	 * Otherwise the system may be unresponsive!
+	 */
+	private static final long PAUSE_WAKE_UP_RX = 50;
+	private static final long PAUSE_READ_TAG_RX = 300;
+	private static final long PAUSE_GETSTATUS = 300;
+	private static final long PAUSE_READ_POWERDOWN_RX = 50;
+	private static long POOLING_TIME;
+
 	private NFCPoolingHandler(){}
 
 	public static NFCPoolingHandler getInstance(){
@@ -41,9 +59,6 @@ public final class NFCPoolingHandler {
 		if(btSocket==null || poolingTime <= 0 || context==null){
 			return false;
 		}
-		//Wake up NFC hardware..
-		sendMessageViaBluetooth(btSocket, NFCFrameHandler.TX_NFC_WAKE_UP.getNFCCall());
-
 		//Set the flag to NOT STOP the thread!
 		mFinishThread = false;
 
@@ -57,12 +72,18 @@ public final class NFCPoolingHandler {
 		if(btSocket==null){
 			return false;
 		}
-		//Power-down NFC Hardware...
-		sendMessageViaBluetooth(btSocket, NFCFrameHandler.TX_NFC_POWER_DOWN.getNFCCall());
 
 		//set the flag TO STOP the thread and shutdown pooling...
 		mFinishThread = true;
 
+		//wait until the thread finishes for a maximum of 2 seconds... 
+		//it will be quicker than this...
+		if(mManagerThread != null){
+			int iter = 0;
+			while(mManagerThread.isAlive() && iter++<100){
+				poolingSleep(20);
+			}
+		}
 		return true;
 	}
 
@@ -71,6 +92,13 @@ public final class NFCPoolingHandler {
 		if(btSocket == null || poolingTime<=0){
 			//arguments invalid
 			return;
+		}
+		
+		POOLING_TIME = poolingTime - (PAUSE_WAKE_UP_RX+PAUSE_READ_TAG_RX+PAUSE_GETSTATUS+PAUSE_READ_POWERDOWN_RX);
+		
+		if(POOLING_TIME < 150){
+			//the overall pooling time will be at least of 500ms;
+			POOLING_TIME = 150;
 		}
 
 		if(mManagerThread!=null && mManagerThread.isAlive()){
@@ -83,29 +111,66 @@ public final class NFCPoolingHandler {
 				try {
 					mInputStream = btSocket.getInputStream();
 				} catch (IOException e) {
-					Log.d(IConstants.MY_TAG, "*** Error while getting the input stream...");
-					return;
+					Log.e(IConstants.MY_TAG, "*** Error while getting the input stream...");
+					return;//exit thread
 				}
 
 				while(!mFinishThread){
+					int numBytesRead = 0;
+
+					/********************************
+					 * Wake up NFC Hardware...
+					 ********************************/
 					try {
-						Log.d(IConstants.MY_TAG, "*** managerNFCPooling: Pooling NFC Messages..."); 
-						//Send message for NFC Tag Reading Command...
-						sendMessageViaBluetooth(btSocket, NFCFrameHandler.TX_NFC_SCAN_TAG.getNFCCall());
-					} catch (IOException e) {
-						Log.d(IConstants.MY_TAG, "*** Error while writing message to the NFC Socket: "+e);
+						sendMessageViaBluetooth(btSocket, NFCFrameHandler.TX_NFC_WAKE_UP.getNFCCall());
+						
+						//if(D){Log.d(IConstants.MY_TAG, "*** Wake Up len = "+ NFCFrameHandler.TX_NFC_WAKE_UP.getNFCCall().length);}
+
+						poolingSleep(PAUSE_WAKE_UP_RX);//wait for the NFC module build up completely its buffer...
+						//without this the messege will be sliced.
+
+						numBytesRead = mInputStream.read(mReadBuffer);
+
+						if(D){
+							Log.d(IConstants.MY_TAG, "*** managerNFCPooling - Bytes read - Wake Up RX: "+ numBytesRead);
+							Log.d(IConstants.MY_TAG, "*** managerNFCPooling - Buffer - Wake Up RX: "+ Utils.convertToHexString(mReadBuffer, numBytesRead));
+						}
+
+					} catch (IOException e1) {
+						Log.e(IConstants.MY_TAG, "*** Error while sending message...");
 						return;//exit thread
 					}
 
-					int numBytesRead = -1;
+
+					/********************************
+					/* Read NFC Tags message...
+					 ********************************/
+					try {
+						if(D){Log.d(IConstants.MY_TAG, "*** managerNFCPooling: Pooling NFC Messages...");}
+
+						//Send message for NFC Tag Reading Command...
+						sendMessageViaBluetooth(btSocket, NFCFrameHandler.TX_NFC_SCAN_TAG.getNFCCall());
+
+						//if(D){Log.d(IConstants.MY_TAG, "*** READ TAG len = "+ NFCFrameHandler.TX_NFC_SCAN_TAG.getNFCCall().length);}
+					} catch (IOException e) {
+						Log.e(IConstants.MY_TAG, "*** Error while writing message to the NFC Socket: "+e);
+						return;//exit thread
+					}
+
+					poolingSleep(PAUSE_READ_TAG_RX);//wait for the NFC module build up completely its buffer...
+					                  //without this the message will be sliced.
+
 					try {
 						numBytesRead = mInputStream.read(mReadBuffer);
 					} catch (IOException e) {
-						Log.d(IConstants.MY_TAG, "IOException occured... finishing thread: "+e);
+						Log.e(IConstants.MY_TAG, "IOException occured... finishing thread: "+e);
 						return;
 					}
-					Log.d(IConstants.MY_TAG, "*** managerNFCPooling - Bytes read: "+ numBytesRead);
-					Log.d(IConstants.MY_TAG, "*** managerNFCPooling - Buffer: "+ Utils.convertToHexString(mReadBuffer, numBytesRead));
+
+					if(D){
+						Log.d(IConstants.MY_TAG, "*** managerNFCPooling - Bytes read: "+ numBytesRead);
+						Log.d(IConstants.MY_TAG, "*** managerNFCPooling - Buffer: "+ Utils.convertToHexString(mReadBuffer, numBytesRead));
+					}
 
 					if(!NFCFrameHandler.isNoCardDetectedRXMsg(mReadBuffer, numBytesRead)){
 						//enters here if the message IS NOT a "no card" NFC response...
@@ -116,24 +181,73 @@ public final class NFCPoolingHandler {
 						 * that has implemented and registered a BroadcastReceiver for this
 						 * intent type.
 						 */
-						context.sendBroadcast(Utils.buildIntentWithNFCTags(list));
+						if(!list.isEmpty()){
+							context.sendBroadcast(Utils.buildIntentWithNFCTags(list));
+						}
 					}
-					poolingSleep(poolingTime);
-				}//while
+					
+					/**********************************************************
+					 * Check NFC firmware version
+					 * This is used as a checkpoint to verify that the NFC 
+					 * responses are consistent and the system is working 
+					 * properly.
+					 *********************************************************/
+					try {
+						sendMessageViaBluetooth(btSocket, NFCFrameHandler.TX_NFC_GET_STATUS.getNFCCall());
+						poolingSleep(PAUSE_GETSTATUS);
+						numBytesRead = mInputStream.read(mReadBuffer);
+						if(D){
+							Log.d(IConstants.MY_TAG, "*** managerNFCPooling - Bytes read - Firmware RX: "+ numBytesRead);
+							Log.d(IConstants.MY_TAG, "*** managerNFCPooling - Buffer - Firmware RX: "+ Utils.convertToHexString(mReadBuffer, numBytesRead));
+						}
+						
+						int nTries = 0;
+						while(NFCFrameHandler.isFirmwareRXOk(mReadBuffer, numBytesRead)==false && nTries++<3){
+							Log.w(IConstants.MY_TAG,"*** The NFC-Bluetooth stream is desynchronized... Trying to fix it!...");
+							/*
+							 * Data on the NFC device got desynchronized...
+							 * Send the same command again and wait longer for all
+							 * the data be returned from the NFC's buffer.
+							 * This is just a safeguard and it shouldn't happen at all!
+							 */
+							sendMessageViaBluetooth(btSocket, NFCFrameHandler.TX_NFC_GET_STATUS.getNFCCall());
+							poolingSleep(2000);
+							mInputStream.read(mReadBuffer);
+						}
+						
+					} catch (IOException e) {
+						Log.e(IConstants.MY_TAG, "IOException occured... finishing thread: "+e);
+						return;
+					}
 
-				/*
-				 * "clean" the input stream buffer, or next time we re-connect the pooling
-				 * without closing the bluetooth socket the input stream buffer could
-				 * contain "old" data.
-				 */
-				try {
-					mInputStream.read(mReadBuffer);
-				} catch (IOException e) {
-					Log.d(IConstants.MY_TAG, "IOException occured... finishing thread: "+e);
-					return;
-				}
+					/***********************************
+					/* Power Down the NFC hardware...
+					 ***********************************/
+					try {
+						sendMessageViaBluetooth(btSocket, NFCFrameHandler.TX_NFC_POWER_DOWN.getNFCCall());
 
-				Log.d(IConstants.MY_TAG, "*** managerNFCPooling - Stop Pooling was requested... Finishing thread...");
+						//if(D){Log.d(IConstants.MY_TAG, "*** Power Down len = "+ NFCFrameHandler.TX_NFC_POWER_DOWN.getNFCCall().length);}
+
+						poolingSleep(PAUSE_READ_POWERDOWN_RX);//wait for the NFC module build up completely its buffer...
+						                 //without this the message will be sliced.
+
+						numBytesRead = mInputStream.read(mReadBuffer);
+
+						if(D){
+							Log.d(IConstants.MY_TAG, "*** managerNFCPooling - Bytes read - PowerDown RX: "+ numBytesRead);
+							Log.d(IConstants.MY_TAG, "*** managerNFCPooling - Buffer - PowerDown RX: "+ Utils.convertToHexString(mReadBuffer, numBytesRead));
+						}
+					} catch (IOException e) {
+						Log.e(IConstants.MY_TAG, "IOException occured... finishing thread: "+e);
+						return;
+					}
+										
+					//pooling pause....
+					poolingSleep(POOLING_TIME);
+
+				}///// while //////
+
+				Log.i(IConstants.MY_TAG, "*** managerNFCPooling - Stop Pooling was requested... Finishing thread...");
 				//exiting thread...
 				return;
 			}//run()
@@ -146,7 +260,7 @@ public final class NFCPoolingHandler {
 		try {
 			Thread.sleep(poolingTime);
 		} catch (InterruptedException e) {
-			Log.d(IConstants.MY_TAG,"*** Error while sleeping...");
+			Log.e(IConstants.MY_TAG,"*** Error while sleeping...");
 		}
 	}
 
@@ -155,7 +269,7 @@ public final class NFCPoolingHandler {
 		if(btSocket==null || outBuffer==null || outBuffer.length==0){
 			return;
 		}
-		btSocket.getOutputStream().write(outBuffer,0,outBuffer.length-1);
+		btSocket.getOutputStream().write(outBuffer,0,outBuffer.length);
 	}
 
 	private List<byte[]> processNFCMessageExtractTags(byte[] buffer, int dataSize){

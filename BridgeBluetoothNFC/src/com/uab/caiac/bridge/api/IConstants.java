@@ -3,6 +3,7 @@ package com.uab.caiac.bridge.api;
 public interface IConstants {
 
 	public static final String MY_TAG = "Bridge_Bluetooth_NFC_API";
+	public static boolean DEBUG_ENABLED = true;
 	
 	/**
 	 * IMPORTANT NOTE - README!

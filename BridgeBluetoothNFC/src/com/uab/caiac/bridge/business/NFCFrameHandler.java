@@ -37,7 +37,7 @@ public final class NFCFrameHandler {
 	public static final NFCFrameHandler TX_NFC_WAKE_UP    = new NFCFrameHandler("TX_NFC_WakeUp", new byte[]{0x55, 0x55, 0x00, 0x00, 0x00, 0x00, 0x00, (byte) 0xFF, 0x03, (byte) 0xFD, (byte) 0xD4, 0x14, 0x01, 0x17, 0x00});						
 	public static final NFCFrameHandler TX_NFC_POWER_DOWN = new NFCFrameHandler("TX_NFC_PowerDown", new byte[]{0x00, 0x00, (byte)0xFF, 0x03, (byte)0xFD, (byte)0xD4, 0x16, 0x10, 0x06, 0x00});
 	public static final NFCFrameHandler TX_NFC_SCAN_TAG   = new NFCFrameHandler("TX_NFC_ScanTag", new byte[]{0x00, 0x00, (byte)0xFF, 0x06, (byte)0xFA, (byte)0xD4, 0x60, 0x01, 0x01, 0x00, 0x04, (byte)0xC6, 0x00});
-
+	public static final NFCFrameHandler TX_NFC_GET_STATUS = new NFCFrameHandler("TX_NFC_GetStatus", new byte[]{0x00, 0x00, (byte)0xFF, 0x02, (byte)0xFE, (byte)0xD4, 0x04, 0x28, 0x00});
 	/**************************************************************************
 	 * "No card" response
 	 **************************************************************************/
@@ -219,6 +219,40 @@ public final class NFCFrameHandler {
 			return false;
 		}
 
+		return true;
+	}
+	
+	public static boolean isFirmwareRXOk(byte[] dataBuffer, int readedBytes){
+		if(dataBuffer==null || readedBytes<=18){
+			return false;
+		}
+		
+		//extract the relevant bytes...
+		byte[] buffer = new byte[readedBytes];
+		System.arraycopy(dataBuffer, 0, buffer, 0, readedBytes);
+		
+		//get acknowledge info...
+		byte[] ack = new byte[6];
+		System.arraycopy(dataBuffer, 0, ack, 0, 6);
+		if(!Arrays.equals(ack, NFCFrameHandler.NFC_ACK.getNFCCall())){
+			return false;
+		}
+		
+		//compute length CRC...
+		if(buffer[9]+buffer[10] != 0){
+			//lan CRC failed
+			return false;
+		}
+		
+		//compute global CRC...
+		byte crcSum = 0;
+		for(int i=11; i<=buffer.length-3;i++){
+			crcSum += buffer[i];
+		}
+		if(crcSum + buffer[buffer.length-2] != 0){
+			return false;
+		}
+		
 		return true;
 	}
 
