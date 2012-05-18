@@ -1,4 +1,4 @@
-package com.uab.caiac.bridge.business;
+package com.uab.ofernandez.bridge.business;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -6,7 +6,7 @@ import java.util.List;
 
 import android.content.Intent;
 
-import com.uab.caiac.bridge.api.IConstants;
+import com.uab.ofernandez.bridge.api.IConstants;
 
 public final class Utils {
 
@@ -14,10 +14,10 @@ public final class Utils {
 	 * Converts an array of bytes to its hexadecimal string representation.
 	 * @param buffer The byte array that we want to convert.
 	 * @param numBytes The initial number of bytes we want to consider.
-	 * @return The string representation or and empty string in case of 
+	 * @return The string representation or and empty string in case of
 	 * 		invalid parameters.
 	 */
-	public static String convertToHexString(byte[] buffer, int numBytes){		
+	public static String convertToHexString(byte[] buffer, int numBytes){
 		if(buffer==null || numBytes<=0 || numBytes>buffer.length){
 			return new String("");
 		}
@@ -37,7 +37,7 @@ public final class Utils {
 	}
 
 	/**
-	 * Builds an Intent containing the NFC tags detected, for later broadcast 
+	 * Builds an Intent containing the NFC tags detected, for later broadcast
 	 * to the Broadcast receiver implemented by some Activity.
 	 * @param tagsList The list of detected NFC tags
 	 * @return Intent containing tag information.
@@ -55,7 +55,7 @@ public final class Utils {
 		}
 		return intent;
 	}
-	
+
 	/**
 	 * Extracts the NFC tags from a received Intent.
 	 * @param intent Intent instance.
@@ -65,16 +65,16 @@ public final class Utils {
 		if(intent==null || !intent.getAction().equals(IConstants.INTENT_TRANSFER_NFC_TAGS)){
 			return Collections.emptyList();
 		}
-		
+
 		ArrayList<String> tags = new ArrayList<String>();
-		
+
 		String tag1 = intent.getStringExtra(IConstants.ID_NFC_TAG_1);
 		String tag2 = intent.getStringExtra(IConstants.ID_NFC_TAG_2);
-		
+
 		if(tag1!=null){ tags.add(tag1);}
 		if(tag2!=null){ tags.add(tag2);}
-				
+
 		return tags;
 	}
-	
+
 }

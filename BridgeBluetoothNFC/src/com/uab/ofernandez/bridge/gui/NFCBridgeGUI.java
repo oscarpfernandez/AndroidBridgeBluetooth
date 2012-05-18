@@ -1,4 +1,4 @@
-package com.uab.caiac.bridge.gui;
+package com.uab.ofernandez.bridge.gui;
 
 import java.io.IOException;
 import java.util.List;
@@ -17,10 +17,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import com.uab.caiac.R;
-import com.uab.caiac.bridge.api.BluetoothNFCBrigdgeImpl;
-import com.uab.caiac.bridge.api.IConstants;
-import com.uab.caiac.bridge.business.Utils;
+import com.uab.ofernandez.R;
+import com.uab.ofernandez.bridge.api.BluetoothNFCBrigdgeImpl;
+import com.uab.ofernandez.bridge.api.IConstants;
+import com.uab.ofernandez.bridge.business.Utils;
 
 public class NFCBridgeGUI extends Activity{
 
@@ -33,14 +33,14 @@ public class NFCBridgeGUI extends Activity{
 
 	private static TextView deviceNameTV;
 	private static TextView tagValueTV;
-	
+
 	// handlers for callbacks to the UI thread
 	private final Handler mBTConnectHandler = new Handler();
 	private final Handler mBTDiconnectHandler = new Handler();
 	private final Handler mPoolingConnectHandler = new Handler();
 	private final Handler mPoolingDiconnectHandler = new Handler();
 	private final static Handler mReceivedTagsHandler = new Handler();
-	
+
 	// create runnable for posting
 	final Runnable mUpdateBTConnectResults = new Runnable() {
 		public void run() {
@@ -71,17 +71,17 @@ public class NFCBridgeGUI extends Activity{
 			updateReceivedTags();
 		}
 	};
-	
+
 
 	/**************************************************************************
 	 * This Broadcast Receiver will keep listening of Intents sent by the Pooling
 	 * Manager when some new Tags are identified.
 	 * By using this approach the activity is only notified when some NFC Tags
 	 * are available.
-	 * Notes: 
+	 * Notes:
 	 * 	  - that this receiver MUST be registered within the activity "OnCreate".
-	 *    - the activity MUST declare in the AndroidManifest.xml that it can receive 
-	 *      this type of intents. (See the Intent Filter tag in AndroidManifest.xml 
+	 *    - the activity MUST declare in the AndroidManifest.xml that it can receive
+	 *      this type of intents. (See the Intent Filter tag in AndroidManifest.xml
 	 *      for details).
 	 */
 	private final Handler mNFCTAGHandler = new Handler();
@@ -91,7 +91,7 @@ public class NFCBridgeGUI extends Activity{
 			String mAction = intent.getAction();
 			if(mAction.equals(IConstants.INTENT_TRANSFER_NFC_TAGS)) {
 				mReceivedTags = Utils.retrieveNFCTagsFromIntent(intent);
-				mReceivedTagsHandler.post(mUpdateReceivedTagsResults);   
+				mReceivedTagsHandler.post(mUpdateReceivedTagsResults);
 			}
 		}
 	};
@@ -99,10 +99,10 @@ public class NFCBridgeGUI extends Activity{
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
-		
+
 		/**********************************************************************
-		 * Registration of the Broadcast Receiver to listen for notifications 
-		 * from the NFCPoolingHandler listening for NFC tags. 
+		 * Registration of the Broadcast Receiver to listen for notifications
+		 * from the NFCPoolingHandler listening for NFC tags.
 		 */
 		IntentFilter intentToReceiveFilter = new IntentFilter();
 		intentToReceiveFilter.addAction(IConstants.INTENT_TRANSFER_NFC_TAGS);
@@ -111,19 +111,19 @@ public class NFCBridgeGUI extends Activity{
 
 		deviceNameTV = (TextView)findViewById(R.id.label_bt_device_value);
 		tagValueTV = (TextView)findViewById(R.id.label_bt_tags_value);
-		
+
 		mEnableBTtButton = (ToggleButton)findViewById(R.id.bt_toggle_button);
 		mEnableBTtButton.setOnClickListener(new OnClickListener() {
 
 			public void onClick(View v) {
 
-				if(isBluetoothEnabled){	
+				if(isBluetoothEnabled){
 					mBTDiconnectHandler.post(mUpdateBTDisconnectResults);
 				}
-				else{ 
+				else{
 					mBTConnectHandler.post(mUpdateBTConnectResults);
 				}
-				
+
 				if(!mEnableBTtButton.isChecked()){
 					mEnablePoolingtButton.setEnabled(false);
 				}
@@ -176,7 +176,7 @@ public class NFCBridgeGUI extends Activity{
 			Toast.makeText(NFCBridgeGUI.this, "Could not connect to Bluetooth device", Toast.LENGTH_LONG).show();
 			mEnableBTtButton.setChecked(false);
 			return;
-		} 
+		}
 
 		isBluetoothEnabled = true;
 		deviceNameTV.setText(BluetoothNFCBrigdgeImpl.getInstance().getDeviceDescription());
@@ -248,7 +248,7 @@ public class NFCBridgeGUI extends Activity{
 		IntentFilter intentToReceiveFilter = new IntentFilter();
 		intentToReceiveFilter.addAction(IConstants.INTENT_TRANSFER_NFC_TAGS);
 		this.registerReceiver(mIntentNFCTagsReceiver, intentToReceiveFilter, null, mNFCTAGHandler);
-		
+
 	}
 
 	@Override

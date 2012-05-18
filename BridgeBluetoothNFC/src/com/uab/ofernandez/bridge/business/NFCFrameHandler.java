@@ -1,4 +1,4 @@
-package com.uab.caiac.bridge.business;
+package com.uab.ofernandez.bridge.business;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -7,7 +7,7 @@ import java.util.List;
 
 import android.util.Log;
 
-import com.uab.caiac.bridge.api.IConstants;
+import com.uab.ofernandez.bridge.api.IConstants;
 
 public final class NFCFrameHandler {
 
@@ -34,7 +34,7 @@ public final class NFCFrameHandler {
 	/**************************************************************************
 	 * NFC Request Commands
 	 **************************************************************************/
-	public static final NFCFrameHandler TX_NFC_WAKE_UP    = new NFCFrameHandler("TX_NFC_WakeUp", new byte[]{0x55, 0x55, 0x00, 0x00, 0x00, 0x00, 0x00, (byte) 0xFF, 0x03, (byte) 0xFD, (byte) 0xD4, 0x14, 0x01, 0x17, 0x00});						
+	public static final NFCFrameHandler TX_NFC_WAKE_UP    = new NFCFrameHandler("TX_NFC_WakeUp", new byte[]{0x55, 0x55, 0x00, 0x00, 0x00, 0x00, 0x00, (byte) 0xFF, 0x03, (byte) 0xFD, (byte) 0xD4, 0x14, 0x01, 0x17, 0x00});
 	public static final NFCFrameHandler TX_NFC_POWER_DOWN = new NFCFrameHandler("TX_NFC_PowerDown", new byte[]{0x00, 0x00, (byte)0xFF, 0x03, (byte)0xFD, (byte)0xD4, 0x16, 0x10, 0x06, 0x00});
 	public static final NFCFrameHandler TX_NFC_SCAN_TAG   = new NFCFrameHandler("TX_NFC_ScanTag", new byte[]{0x00, 0x00, (byte)0xFF, 0x06, (byte)0xFA, (byte)0xD4, 0x60, 0x01, 0x01, 0x00, 0x04, (byte)0xC6, 0x00});
 	public static final NFCFrameHandler TX_NFC_GET_STATUS = new NFCFrameHandler("TX_NFC_GetStatus", new byte[]{0x00, 0x00, (byte)0xFF, 0x02, (byte)0xFE, (byte)0xD4, 0x04, 0x28, 0x00});
@@ -50,7 +50,7 @@ public final class NFCFrameHandler {
 	public static final NFCFrameHandler NFC_NACK = new NFCFrameHandler("NFC_NACK", new byte[]{0x00, 0x00, (byte)0xFF, (byte)0xFF, (byte)0x00, 0x00});
 
 	/**
-	 * Checks if the received data is valid, meaning that it begins with ACK. 
+	 * Checks if the received data is valid, meaning that it begins with ACK.
 	 * @param receivedData
 	 * @return True is the data begins with ACK byte data.
 	 */
@@ -96,7 +96,7 @@ public final class NFCFrameHandler {
 		if(dataBuffer == null){
 			return Collections.emptyList();
 		}
-		
+
 		/*
 		 * DO NOT change the order of this method if you don't know what you're
 		 * doing! The sequence is relevant to be robust against all types of messages
@@ -122,19 +122,19 @@ public final class NFCFrameHandler {
 			Log.d(IConstants.MY_TAG, "*** Data Frame CRC check failed!");
 			return Collections.emptyList();
 		}
-		
+
 		logger("*** FrameSize = "+frameSize);
 
 		byte[] data = new byte[frameSize];
-		
+
 		//Keep only the information from "# of tags field"...
 		System.arraycopy(dataBuffer, 13, data, 0, frameSize);
-	
+
 		logger("*** data[] = "+ Utils.convertToHexString(data, data.length));
 
 		//First byte data tells us the number of readed tags...
 		int readedTags = (int)data[0];
-		
+
 		if(readedTags == 0){
 			return Collections.emptyList();
 		}
@@ -203,7 +203,7 @@ public final class NFCFrameHandler {
 			return false;
 		}
 
-		//Check#1 - NFC length CRC. 
+		//Check#1 - NFC length CRC.
 		if((int)(dataBuffer[9]+dataBuffer[10])!=0){
 			//NFC frame has a incorrect Len frame.
 			return false;
@@ -214,36 +214,36 @@ public final class NFCFrameHandler {
 		for(int i=11; i<=dataBuffer.length-3; i++){
 			sum += dataBuffer[i];
 		}
-		
+
 		if(sum + dataBuffer[dataBuffer.length-2] != 0){
 			return false;
 		}
 
 		return true;
 	}
-	
+
 	public static boolean isFirmwareRXOk(byte[] dataBuffer, int readedBytes){
 		if(dataBuffer==null || readedBytes<=18){
 			return false;
 		}
-		
+
 		//extract the relevant bytes...
 		byte[] buffer = new byte[readedBytes];
 		System.arraycopy(dataBuffer, 0, buffer, 0, readedBytes);
-		
+
 		//get acknowledge info...
 		byte[] ack = new byte[6];
 		System.arraycopy(dataBuffer, 0, ack, 0, 6);
 		if(!Arrays.equals(ack, NFCFrameHandler.NFC_ACK.getNFCCall())){
 			return false;
 		}
-		
+
 		//compute length CRC...
 		if(buffer[9]+buffer[10] != 0){
 			//lan CRC failed
 			return false;
 		}
-		
+
 		//compute global CRC...
 		byte crcSum = 0;
 		for(int i=11; i<=buffer.length-3;i++){
@@ -252,7 +252,7 @@ public final class NFCFrameHandler {
 		if(crcSum + buffer[buffer.length-2] != 0){
 			return false;
 		}
-		
+
 		return true;
 	}
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="com.uab.caiac"
+      package="com.uab.ofernandez"
       android:versionCode="1"
       android:versionName="1.0">
     <uses-sdk android:minSdkVersion="10" />
@@ -16,7 +16,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 			<intent-filter>
-                <action android:name="com.uab.caiac.bridge.TRANSFER_NFC_TAGS" />
+                <action android:name="com.uab.ofernandez.bridge.TRANSFER_NFC_TAGS" />
             </intent-filter>
         </activity>
     </application>

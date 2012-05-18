@@ -1,4 +1,4 @@
-package com.uab.caiac.bridge.api;
+package com.uab.ofernandez.bridge.api;
 
 import java.io.IOException;
 
@@ -7,8 +7,8 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
 
-import com.uab.caiac.bridge.business.BluetoothConnectionHandler;
-import com.uab.caiac.bridge.business.NFCPoolingHandler;
+import com.uab.ofernandez.bridge.business.BluetoothConnectionHandler;
+import com.uab.ofernandez.bridge.business.NFCPoolingHandler;
 
 public final class BluetoothNFCBrigdgeImpl implements IBluetoothNFCBridge{
 
@@ -28,7 +28,7 @@ public final class BluetoothNFCBrigdgeImpl implements IBluetoothNFCBridge{
 
 	@Override
 	public final boolean startBluetoothRFCommConnection(String deviceName, Activity context) throws Exception {
-		Log.i(IConstants.MY_TAG, "*** BEGIN startBluetoothRFCommConnection"); 
+		Log.i(IConstants.MY_TAG, "*** BEGIN startBluetoothRFCommConnection");
 		if(deviceName == null || deviceName.length()==0 || context==null){
 			Log.d(IConstants.MY_TAG, "*** startBluetoothRFCommConnection - invalid arguments!");
 			return false;
@@ -49,17 +49,17 @@ public final class BluetoothNFCBrigdgeImpl implements IBluetoothNFCBridge{
 			Log.d(IConstants.MY_TAG, "*** startNFCPooling - invalid arguments!");
 			return false;
 		}
-		Log.i(IConstants.MY_TAG, "*** BEGIN startNFCPooling"); 
+		Log.i(IConstants.MY_TAG, "*** BEGIN startNFCPooling");
 		NFCPoolingHandler.getInstance().startPoolingBridge(mmBTSocket, poolingTime, context);
-		Log.i(IConstants.MY_TAG, "*** END startNFCPooling"); 
+		Log.i(IConstants.MY_TAG, "*** END startNFCPooling");
 		return true;
 	}
 
 	@Override
 	public final void stopNFCPooling() throws IOException {
-		Log.i(IConstants.MY_TAG, "*** BEGIN stopNFCPooling"); 
+		Log.i(IConstants.MY_TAG, "*** BEGIN stopNFCPooling");
 		NFCPoolingHandler.getInstance().stopPoolingBridge(mmBTSocket);
-		Log.i(IConstants.MY_TAG, "*** END stopNFCPooling"); 
+		Log.i(IConstants.MY_TAG, "*** END stopNFCPooling");
 	}
 
 	@Override

@@ -1,4 +1,4 @@
-package com.uab.caiac.bridge.business;
+package com.uab.ofernandez.bridge.business;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,34 +9,34 @@ import android.app.Activity;
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
 
-import com.uab.caiac.bridge.api.IConstants;
+import com.uab.ofernandez.bridge.api.IConstants;
 
 public final class NFCPoolingHandler {
 
 	private static NFCPoolingHandler instance;
 
 	/*
-	 * 255 bytes is the theoretical buffer size maximum 
+	 * 255 bytes is the theoretical buffer size maximum
 	 * supported by a NFC Tag.
 	 */
 	private byte[] mReadBuffer = new byte[255];
 	private InputStream mInputStream;
 
 	//Pooling thread manager
-	private Thread mManagerThread; 
+	private Thread mManagerThread;
 	//Flag to warn the thread manager to finish
 	private boolean mFinishThread = false;
 
 	//debug flag
 	private boolean D = IConstants.DEBUG_ENABLED;
-	
+
 	/*
 	 * Establishes the pauses that are required between a RX and TX command.
-	 * In other words, enforces the required pause times between a call and 
-	 * its response. This is mandatory in order to get the call system 
+	 * In other words, enforces the required pause times between a call and
+	 * its response. This is mandatory in order to get the call system
 	 * synchronized and functioning properly.
-	 * 
-	 * DO NOT change these parameters if you don't know what you're doing! 
+	 *
+	 * DO NOT change these parameters if you don't know what you're doing!
 	 * Otherwise the system may be unresponsive!
 	 */
 	private static final long PAUSE_WAKE_UP_RX = 50;
@@ -54,7 +54,7 @@ public final class NFCPoolingHandler {
 		return instance;
 	}
 
-	public boolean startPoolingBridge(BluetoothSocket btSocket, long poolingTime, Activity context) 
+	public boolean startPoolingBridge(BluetoothSocket btSocket, long poolingTime, Activity context)
 	throws IOException, InterruptedException{
 		if(btSocket==null || poolingTime <= 0 || context==null){
 			return false;
@@ -76,26 +76,26 @@ public final class NFCPoolingHandler {
 		//set the flag TO STOP the thread and shutdown pooling...
 		mFinishThread = true;
 
-		//wait until the thread finishes for a maximum of 2 seconds... 
+		//wait until the thread finishes for a maximum of 4 seconds...
 		//it will be quicker than this...
 		if(mManagerThread != null){
 			int iter = 0;
-			while(mManagerThread.isAlive() && iter++<100){
+			while(mManagerThread.isAlive() && iter++<200){
 				poolingSleep(20);
 			}
 		}
 		return true;
 	}
 
-	private void managerNFCPooling(final BluetoothSocket btSocket, final long poolingTime, final Activity context) 
+	private void managerNFCPooling(final BluetoothSocket btSocket, final long poolingTime, final Activity context)
 	throws IOException, InterruptedException{
 		if(btSocket == null || poolingTime<=0){
 			//arguments invalid
 			return;
 		}
-		
+
 		POOLING_TIME = poolingTime - (PAUSE_WAKE_UP_RX+PAUSE_READ_TAG_RX+PAUSE_GETSTATUS+PAUSE_READ_POWERDOWN_RX);
-		
+
 		if(POOLING_TIME < 150){
 			//the overall pooling time will be at least of 500ms;
 			POOLING_TIME = 150;
@@ -123,7 +123,7 @@ public final class NFCPoolingHandler {
 					 ********************************/
 					try {
 						sendMessageViaBluetooth(btSocket, NFCFrameHandler.TX_NFC_WAKE_UP.getNFCCall());
-						
+
 						//if(D){Log.d(IConstants.MY_TAG, "*** Wake Up len = "+ NFCFrameHandler.TX_NFC_WAKE_UP.getNFCCall().length);}
 
 						poolingSleep(PAUSE_WAKE_UP_RX);//wait for the NFC module build up completely its buffer...
@@ -185,40 +185,6 @@ public final class NFCPoolingHandler {
 							context.sendBroadcast(Utils.buildIntentWithNFCTags(list));
 						}
 					}
-					
-					/**********************************************************
-					 * Check NFC firmware version
-					 * This is used as a checkpoint to verify that the NFC 
-					 * responses are consistent and the system is working 
-					 * properly.
-					 *********************************************************/
-					try {
-						sendMessageViaBluetooth(btSocket, NFCFrameHandler.TX_NFC_GET_STATUS.getNFCCall());
-						poolingSleep(PAUSE_GETSTATUS);
-						numBytesRead = mInputStream.read(mReadBuffer);
-						if(D){
-							Log.d(IConstants.MY_TAG, "*** managerNFCPooling - Bytes read - Firmware RX: "+ numBytesRead);
-							Log.d(IConstants.MY_TAG, "*** managerNFCPooling - Buffer - Firmware RX: "+ Utils.convertToHexString(mReadBuffer, numBytesRead));
-						}
-						
-						int nTries = 0;
-						while(NFCFrameHandler.isFirmwareRXOk(mReadBuffer, numBytesRead)==false && nTries++<3){
-							Log.w(IConstants.MY_TAG,"*** The NFC-Bluetooth stream is desynchronized... Trying to fix it!...");
-							/*
-							 * Data on the NFC device got desynchronized...
-							 * Send the same command again and wait longer for all
-							 * the data be returned from the NFC's buffer.
-							 * This is just a safeguard and it shouldn't happen at all!
-							 */
-							sendMessageViaBluetooth(btSocket, NFCFrameHandler.TX_NFC_GET_STATUS.getNFCCall());
-							poolingSleep(2000);
-							mInputStream.read(mReadBuffer);
-						}
-						
-					} catch (IOException e) {
-						Log.e(IConstants.MY_TAG, "IOException occured... finishing thread: "+e);
-						return;
-					}
 
 					/***********************************
 					/* Power Down the NFC hardware...
@@ -241,7 +207,7 @@ public final class NFCPoolingHandler {
 						Log.e(IConstants.MY_TAG, "IOException occured... finishing thread: "+e);
 						return;
 					}
-										
+
 					//pooling pause....
 					poolingSleep(POOLING_TIME);
 
@@ -264,7 +230,7 @@ public final class NFCPoolingHandler {
 		}
 	}
 
-	private void sendMessageViaBluetooth(BluetoothSocket btSocket, byte[] outBuffer) 
+	private void sendMessageViaBluetooth(BluetoothSocket btSocket, byte[] outBuffer)
 	throws IOException {
 		if(btSocket==null || outBuffer==null || outBuffer.length==0){
 			return;
@@ -285,7 +251,7 @@ public final class NFCPoolingHandler {
 			return NFCFrameHandler.extractNFCTagData(nfcData);
 		}
 		else{
-			return Collections.emptyList();	
+			return Collections.emptyList();
 		}
 	}
 
